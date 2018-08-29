@@ -1,11 +1,15 @@
 const STS = require("aws-sdk/clients/sts");
 const argv = require("yargs").argv;
-const { getFileContents, isErrorType } = require("./aws");
+const Credentials = require("./credentials");
+const { isErrorType } = require("./error");
+const { getFileContents } = require("./file");
 const invokeMfa = require("./mfa");
 
 const configFile = getFileContents("config");
 
 const profileName = argv.profile;
+
+const credentials = new Credentials(profileName);
 
 const getProfileConfig = (config, role) => {
   const profileKey = Object.keys(config).filter(directive =>
@@ -20,9 +24,12 @@ if (!profile) {
   throw new Error(`Couldn\'t find ${profileName} profile`);
 }
 
-const sessionName = `profileName-${Date.now()}`;
+const currentTime = Date.now();
+const sessionName = `profileName-${currentTime}`;
 
 console.log(`Using profile ${profileName}`);
+
+const storedProfile = credentials.get(profileName);
 
 const config = {
   region: profile.region,
@@ -37,22 +44,13 @@ const config = {
 
 const sts = new STS(config);
 
-function parseGeneratedCredentials(credentials) {
-  const parsedCredentials = `
-export AWS_ACCESS_KEY_ID=${credentials.AccessKeyId}
-export AWS_SECRET_ACCESS_KEY=${credentials.SecretAccessKey}
-export AWS_SESSION_TOKEN=${credentials.SessionToken}
-  `;
-  console.log(parsedCredentials);
-}
-
-function foo(err, data) {
+function processResponseFromAssumeRole(err, data) {
   const isError = isErrorType(err);
   if (isError("noTokenCode")) {
     // Re-attempt the role switch with the inputted MFA token
-    invokeMfa(code => {
-      sts.assumeRole({ TokenCode: code }, (err, data) => {
-        foo(err, data);
+    invokeMfa(token => {
+      sts.assumeRole({ TokenCode: token }, (err, data) => {
+        processResponseFromAssumeRole(err, data);
         process.exit();
       });
     });
@@ -60,10 +58,14 @@ function foo(err, data) {
     throw new Error("Incorrect token code");
   }
   if (data) {
-    parseGeneratedCredentials(data.Credentials);
+    credentials.process(data.Credentials);
   }
 }
 
-// Naively attempt a role switch regardless of whether MFA maybe
-// attached to that IAM profile.
-sts.assumeRole({}, foo);
+if (!storedProfile || storedProfile.expiration < currentTime) {
+  // Naively attempt a role switch regardless of whether MFA maybe
+  // attached to that IAM profile.
+  sts.assumeRole({}, processResponseFromAssumeRole);
+} else {
+  credentials.toStdOut();
+}
