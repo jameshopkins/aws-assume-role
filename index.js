@@ -37,22 +37,33 @@ const config = {
 
 const sts = new STS(config);
 
+function parseGeneratedCredentials(credentials) {
+  const parsedCredentials = `
+export AWS_ACCESS_KEY_ID=${credentials.AccessKeyId}
+export AWS_SECRET_ACCESS_KEY=${credentials.SecretAccessKey}
+export AWS_SESSION_TOKEN=${credentials.SessionToken}
+  `;
+  console.log(parsedCredentials);
+}
+
 function foo(err, data) {
   const isError = isErrorType(err);
   if (isError("noTokenCode")) {
+    // Re-attempt the role switch with the inputted MFA token
     invokeMfa(code => {
       sts.assumeRole({ TokenCode: code }, (err, data) => {
-        console.log(err, data);
+        foo(err, data);
         process.exit();
       });
     });
-    //sts.assumeRole({ TokenCode: "898890" }, foo);
   } else if (isError("incorrectTokenCode")) {
     throw new Error("Incorrect token code");
   }
   if (data) {
-    console.log("NICE!!");
+    parseGeneratedCredentials(data.Credentials);
   }
 }
 
+// Naively attempt a role switch regardless of whether MFA maybe
+// attached to that IAM profile.
 sts.assumeRole({}, foo);
