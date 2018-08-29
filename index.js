@@ -1,8 +1,7 @@
 const STS = require("aws-sdk/clients/sts");
 const argv = require("yargs").argv;
 const { getFileContents, isErrorType } = require("./aws");
-const mfa = require("./mfa");
-const AssumeRole = require("./assume");
+const invokeMfa = require("./mfa");
 
 const configFile = getFileContents("config");
 
@@ -41,10 +40,18 @@ const sts = new STS(config);
 function foo(err, data) {
   const isError = isErrorType(err);
   if (isError("noTokenCode")) {
-    console.log("Enter MFA Code:");
-    sts.assumeRole({ TokenCode: "898890" }, foo);
+    invokeMfa(code => {
+      sts.assumeRole({ TokenCode: code }, (err, data) => {
+        console.log(err, data);
+        process.exit();
+      });
+    });
+    //sts.assumeRole({ TokenCode: "898890" }, foo);
   } else if (isError("incorrectTokenCode")) {
-    console.log("Incorrect token code");
+    throw new Error("Incorrect token code");
+  }
+  if (data) {
+    console.log("NICE!!");
   }
 }
 

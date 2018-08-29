@@ -1,10 +1,12 @@
 process.stdin.setEncoding("utf8");
 
-module.exports = () => {
+module.exports = cb => {
+  console.log("Enter MFA Code:");
+
   process.stdin.on("readable", () => {
     const chunk = process.stdin.read();
     if (chunk !== null) {
-      process.stdout.write(`data: ${chunk}`);
+      cb(chunk.trim());
     }
   });
 

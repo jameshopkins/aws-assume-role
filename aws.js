@@ -9,7 +9,8 @@ const errors = {
   incorrectTokenCode: "invalid MFA one time pass code"
 };
 
-module.exports.isErrorType = err => type => err.message.includes(errors[type]);
+module.exports.isErrorType = err => type =>
+  err && err.message.includes(errors[type]);
 
 module.exports.getFileContents = fileName =>
   parseConfig(readFileSync(getFilePath(fileName), "utf8"));
