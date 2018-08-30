@@ -1,5 +1,8 @@
 const STS = require("aws-sdk/clients/sts");
-const argv = require("yargs").argv;
+const help = require("./help");
+
+const argv = require("yargs").options(help).argv;
+
 const Credentials = require("./credentials");
 const { isErrorType } = require("./error");
 const { getFileContents } = require("./file");
