@@ -52,6 +52,10 @@ code-point-at@^1.0.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/code-point-at/-/code-point-at-1.1.0.tgz#0d070b4d043a5bea33a2f1a40e2edb3d9a4ccf77"
 
+colors-cli@^1.0.17:
+  version "1.0.17"
+  resolved "https://registry.yarnpkg.com/colors-cli/-/colors-cli-1.0.17.tgz#701efee5e82daf79d58a94655d0da4b35d5b2884"
+
 conf@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/conf/-/conf-2.0.0.tgz#43f7e282b32faca31f4d18bf279d6841ad657d5a"

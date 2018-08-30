@@ -1,5 +1,6 @@
 const STS = require("aws-sdk/clients/sts");
 const help = require("./help");
+const themed = require("./themed");
 
 const argv = require("yargs").options(help).argv;
 
@@ -30,7 +31,7 @@ if (!profile) {
 const currentTime = Date.now();
 const sessionName = `profileName-${currentTime}`;
 
-console.log(`Using profile ${profileName}`);
+themed.notice(`🦄  Using profile ${profileName}`);
 
 const storedProfile = credentials.get(profileName);
 
@@ -51,7 +52,7 @@ const sts = new STS(config);
 function processResponseFromAssumeRole(err, data) {
   const isError = isErrorType(err);
   if (isError("validationDuratiion")) {
-    console.error(
+    themed.error(
       `Duration of ${
         argv.duration
       } seconds is invalid. Value can range from 900 seconds to the maximum session duration setting for the ${profileName} role`
@@ -70,6 +71,7 @@ function processResponseFromAssumeRole(err, data) {
     console.error("Incorrect token code");
   }
   if (data) {
+    themed.notice(`⏰  Credentials will be valid for ${argv.duration} secs`);
     credentials.process(data.Credentials);
   }
 }
@@ -79,5 +81,9 @@ if (!storedProfile || storedProfile.expiration < currentTime) {
   // attached to that IAM profile.
   sts.assumeRole({}, processResponseFromAssumeRole);
 } else {
+  const longevity = Math.round((storedProfile.expiration - currentTime) / 1000);
+  themed.success(
+    `👍  Existing credentials are valid for another ${longevity} seconds`
+  );
   credentials.toStdOut();
 }
