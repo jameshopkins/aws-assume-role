@@ -1,7 +1,11 @@
+const color = require("colors-cli/safe");
+
 process.stdin.setEncoding("utf8");
 
+const userInput = color.green;
+
 module.exports = cb => {
-  console.log("Enter MFA Code:");
+  console.log(userInput("Enter MFA Code:"));
 
   process.stdin.on("readable", () => {
     const chunk = process.stdin.read();
