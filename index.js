@@ -38,7 +38,8 @@ const config = {
   params: {
     RoleArn: profile.role_arn,
     RoleSessionName: sessionName,
-    SerialNumber: profile.mfa_serial
+    SerialNumber: profile.mfa_serial,
+    DurationSeconds: argv.duration
   }
 };
 
@@ -46,6 +47,13 @@ const sts = new STS(config);
 
 function processResponseFromAssumeRole(err, data) {
   const isError = isErrorType(err);
+  if (isError("validationDuratiion")) {
+    console.error(
+      `Duration of ${
+        argv.duration
+      } seconds is invalid. Value can range from 900 seconds to the maximum session duration setting for the ${profileName} role`
+    );
+  }
   if (isError("noTokenCode")) {
     // Re-attempt the role switch with the inputted MFA token
     invokeMfa(token => {
@@ -54,8 +62,9 @@ function processResponseFromAssumeRole(err, data) {
         process.exit();
       });
     });
-  } else if (isError("incorrectTokenCode")) {
-    throw new Error("Incorrect token code");
+  }
+  if (isError("incorrectTokenCode")) {
+    console.error("Incorrect token code");
   }
   if (data) {
     credentials.process(data.Credentials);
