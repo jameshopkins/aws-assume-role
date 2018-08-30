@@ -9,11 +9,21 @@ const { isErrorType } = require("./error");
 const { getFileContents } = require("./file");
 const invokeMfa = require("./mfa");
 
+const { AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY } = process.env;
+
+if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY) {
+  return themed.error(
+    `⛔  You need to set both AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY as environment variables!`
+  );
+}
+
 const configFile = getFileContents("config");
 
 const profileName = argv.profile;
 
 const credentials = new Credentials(profileName);
+
+credentials.clear();
 
 const getProfileConfig = (config, role) => {
   const profileKey = Object.keys(config).filter(directive =>
@@ -37,8 +47,8 @@ const storedProfile = credentials.get(profileName);
 
 const config = {
   region: profile.region,
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  accessKeyId: AWS_ACCESS_KEY_ID,
+  secretAccessKey: AWS_SECRET_ACCESS_KEY,
   params: {
     RoleArn: profile.role_arn,
     RoleSessionName: sessionName,
