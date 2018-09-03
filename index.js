@@ -23,8 +23,6 @@ const profileName = argv.profile;
 
 const credentials = new Credentials(profileName);
 
-credentials.clear();
-
 const getProfileConfig = (config, role) => {
   const profileKey = Object.keys(config).filter(directive =>
     directive.includes(role)
@@ -35,7 +33,7 @@ const getProfileConfig = (config, role) => {
 const profile = getProfileConfig(configFile, profileName);
 
 if (!profile) {
-  throw new Error(`Couldn\'t find ${profileName} profile`);
+  return themed.error(`⛔  Couldn\'t find ${profileName} profile`);
 }
 
 const currentTime = Date.now();
@@ -61,8 +59,14 @@ const sts = new STS(config);
 
 function processResponseFromAssumeRole(err, data) {
   const isError = isErrorType(err);
-  if (isError("validationDuratiion")) {
-    themed.error(
+  if (isError("signatureMismatch")) {
+    return themed.error(`There's a signature mismatch!`);
+  }
+  if (isError("validationMFA")) {
+    return themed.error(`😰  That's a badly-formed MFA token you've entered!`);
+  }
+  if (isError("validationDuration")) {
+    return themed.error(
       `Duration of ${
         argv.duration
       } seconds is invalid. Value can range from 900 seconds to the maximum session duration setting for the ${profileName} role`
@@ -73,16 +77,17 @@ function processResponseFromAssumeRole(err, data) {
     invokeMfa(token => {
       sts.assumeRole({ TokenCode: token }, (err, data) => {
         processResponseFromAssumeRole(err, data);
-        process.exit();
       });
     });
   }
   if (isError("incorrectTokenCode")) {
-    console.error("Incorrect token code");
+    return themed.error(`🙈  Incorrect token code`);
   }
+
   if (data) {
     themed.notice(`⏰  Credentials will be valid for ${argv.duration} secs`);
     credentials.process(data.Credentials);
+    credentials.apply(argv.cmd);
   }
 }
 
@@ -95,5 +100,6 @@ if (!storedProfile || storedProfile.expiration < currentTime) {
   themed.success(
     `👍  Existing credentials are valid for another ${longevity} seconds`
   );
-  credentials.toStdOut();
+
+  credentials.apply(argv.cmd);
 }

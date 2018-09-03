@@ -1,20 +1,16 @@
 const color = require("colors-cli/safe");
-
-process.stdin.setEncoding("utf8");
+const readline = require("readline");
 
 const userInput = color.green;
 
 module.exports = cb => {
-  console.log(userInput("Enter MFA Code:"));
-
-  process.stdin.on("readable", () => {
-    const chunk = process.stdin.read();
-    if (chunk !== null) {
-      cb(chunk.trim());
-    }
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
   });
 
-  process.stdin.on("end", () => {
-    process.stdout.write("end");
+  rl.question("Enter MFA Code: ", token => {
+    cb(token);
+    rl.close();
   });
 };
