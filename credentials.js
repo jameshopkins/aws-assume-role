@@ -1,19 +1,22 @@
 const Conf = require("conf");
+const executeCmd = require("./cmd");
 
 class Credentials extends Conf {
   constructor(profileName) {
     super();
     this.profileName = profileName;
+    this.credentials = this.get(this.profileName);
   }
   toStdOut() {
-    const { accessKeyId, secretAccessKey, sessionToken } = this.get(
-      this.profileName
-    );
+    const {
+      AWS_ACCESS_KEY_ID,
+      AWS_SECRET_ACCESS_KEY,
+      AWS_SESSION_TOKEN
+    } = this.credentials;
     const formatted = `
-AWS_ACCESS_KEY_ID=${accessKeyId}
-AWS_SECRET_ACCESS_KEY=${secretAccessKey}
-AWS_SESSION_TOKEN=${sessionToken}
-    `;
+export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+export AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}`;
     console.log(formatted);
   }
   process(credentials) {
@@ -25,14 +28,20 @@ AWS_SESSION_TOKEN=${sessionToken}
     } = credentials;
 
     const parsedCredentials = {
-      accessKeyId: AccessKeyId,
-      secretAccessKey: SecretAccessKey,
-      sessionToken: SessionToken,
+      AWS_ACCESS_KEY_ID: AccessKeyId,
+      AWS_SECRET_ACCESS_KEY: SecretAccessKey,
+      AWS_SESSION_TOKEN: SessionToken,
       expiration: new Date(Expiration).getTime()
     };
 
     this.set(this.profileName, parsedCredentials);
-    this.toStdOut();
+  }
+  apply(cmd) {
+    if (cmd) {
+      executeCmd(cmd, this.credentials);
+    } else {
+      this.toStdOut();
+    }
   }
 }
 
