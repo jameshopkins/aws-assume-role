@@ -1,18 +1,18 @@
 const Conf = require("conf");
+const path = require("path");
 const executeCmd = require("./cmd");
 
 class Credentials extends Conf {
-  constructor(profileName) {
-    super();
-    this.profileName = profileName;
-    this.credentials = this.get(this.profileName);
+  constructor(options) {
+    super(options);
+    this.profileName = options.profileName;
   }
   toStdOut() {
     const {
       AWS_ACCESS_KEY_ID,
       AWS_SECRET_ACCESS_KEY,
       AWS_SESSION_TOKEN
-    } = this.credentials;
+    } = this.get(this.profileName);
     const formatted = `
 export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
 export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
@@ -38,7 +38,7 @@ export AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}`;
   }
   apply(cmd) {
     if (cmd) {
-      executeCmd(cmd, this.credentials);
+      executeCmd(cmd, this.get(this.profileName));
     } else {
       this.toStdOut();
     }

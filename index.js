@@ -20,8 +20,16 @@ if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY) {
 const configFile = getFileContents("config");
 
 const profileName = argv.profile;
+const credentialsFilePath = argv["credentials-file-path"];
+const credentialsFileName = argv["credentials-file-name"];
+const credentialsFileExtension = argv["credentials-file-extension"];
 
-const credentials = new Credentials(profileName);
+const credentials = new Credentials({
+  profileName,
+  cwd: credentialsFilePath,
+  configName: credentialsFileName,
+  fileExtension: credentialsFileExtension
+});
 
 const getProfileConfig = (config, role) => {
   const profileKey = Object.keys(config).filter(directive =>
