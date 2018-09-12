@@ -1,3 +1,5 @@
+#! /usr/bin/env node
+
 const STS = require("aws-sdk/clients/sts");
 const help = require("./help");
 const themed = require("./themed");
@@ -24,12 +26,20 @@ const credentialsFilePath = argv["credentials-file-path"];
 const credentialsFileName = argv["credentials-file-name"];
 const credentialsFileExtension = argv["credentials-file-extension"];
 
+console.log(credentialsFileExtension);
+
 const credentials = new Credentials({
   profileName,
-  cwd: credentialsFilePath,
-  configName: credentialsFileName,
-  fileExtension: credentialsFileExtension
+  ...(credentialsFilePath ? { cwd: credentialsFilePath } : {}),
+  ...(credentialsFileName !== undefined
+    ? { configName: credentialsFileName }
+    : {}),
+  ...(credentialsFileExtension
+    ? { fileExtension: credentialsFileExtension }
+    : {})
 });
+
+console.log("FOO", credentials.path);
 
 const getProfileConfig = (config, role) => {
   const profileKey = Object.keys(config).filter(directive =>
